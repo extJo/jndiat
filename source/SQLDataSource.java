@@ -31,9 +31,9 @@ import javax.xml.transform.TransformerException;
 //Connection to a datasource
 public class SQLDataSource extends T3Connection {
 	public static final int SUCCESS = 0;
-	public static final int SOCKETERROR = 0;
-	public static final int BUFFERERROR = 0;
-	public static final int REQUESTERROR = 0;
+	public static final int SOCKETERROR = 1;
+	public static final int BUFFERERROR = 2;
+	public static final int REQUESTERROR = 3;
 	
 	private static Logger myLogger = Logger.getLogger("JNDIAT");
 	private Connection connection;
