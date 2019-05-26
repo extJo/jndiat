@@ -48,7 +48,7 @@ public class SQLDataSource extends T3Connection {
 	
 	//Returns True if no error. Otherwise returns False
 	private boolean initDataSourceConnection(String dataSource){
-		boolean isConnection = true;
+		boolean resultOfDataSourceConnetion = true;
 		
 		String databaseType = "";
 		myLogger.info("SQL connection through the datasource '"+dataSource+"'");
@@ -67,38 +67,38 @@ public class SQLDataSource extends T3Connection {
 			}
 		} catch (Exception exception) {
 			myLogger.severe("Impossible to get a DataSource connection: "+exception);
-			isConnection = false;
+			resultOfDataSourceConnetion = false;
 		}
 		
-		return isConnection;
+		return resultOfDataSourceConnetion;
 	}
 	
 	//Returns true if all is OK. Otherwise return False
 	public boolean SQLshell (String dataSource){
-		boolean isConnected = false;
-		boolean isPossible;
+		boolean resultOfConnection = false;
+		boolean resultOfsqlShell;
 		this.dataSource = dataSource;
 		this.connection();
 		if (this.isConnected() == true){
 			try {
-				isConnected = this.initDataSourceConnection(dataSource);
-				if (isConnected==true){
+				resultOfConnection = this.initDataSourceConnection(dataSource);
+				if (resultOfConnection==true){
 					generateSQLShell();
 				}
 				else {
-					isPossible = false;
+					resultOfsqlShell = false;
 				}
 			} catch (Exception exception) {
 				myLogger.severe("Impossible to get a DataSource connection: "+exception);
-				isPossible = false;
+				resultOfsqlShell = false;
 			}
-			isPossible = true;
+			resultOfsqlShell = true;
 		}
 		else {
 			myLogger.severe("Impossible to get a SQL shell because we can't establish a connection: "+this.getLastConnectionErrorDescription());
-			isPossible = false;
+			resultOfsqlShell = false;
 		}
-		return isPossible;
+		return resultOfsqlShell;
 	}
 
 	private void generateSQLShell(){
