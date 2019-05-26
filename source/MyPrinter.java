@@ -17,11 +17,11 @@ public class MyPrinter {
 	public static final String ANSI_WHITE = "\u001B[37m";
 	public static final String ANSI_BOLD_ON = "\u001B[1m";
 	public static final String ANSI_BOLD_OFF = "\u001B[22m";
-	
+
 	public static boolean enableColor;
-	public static int titlePos;
-	public static int subtitlePos;
-	
+	public static int titlePosition;
+	public static int subtitlePosition;
+
 	//CONSTANTS (ERRORS)
 	public static final String ERROR_STREAM_CLOSED = "java.io.IOException: Stream closed";
 	public static final String ERROR_CONNECTION_RESET = "java.net.SocketException: Connection reset";
@@ -29,45 +29,56 @@ public class MyPrinter {
 	public MyPrinter(){
 		myLogger.fine("MyPrinter object created");
 		this.enableColor = true;
-		this.titlePos = 0;
-		this.subtitlePos = 0;
+		this.titlePosition = 0;
+		this.subtitlePosition = 0;
 	}
-	
-	public void printTitle (String message){
-		this.titlePos += 1;
-		this.subtitlePos = 1;
-		if (this.enableColor==true){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.titlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
-		else {System.out.println("\n["+this.titlePos+"] "+ message);}
-	}
-	
+
+	public void printTitle (String message, int Position){
+
+		if (this.enableColor==true){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+ Position +"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
+		else {System.out.println("\n["+ Position +"] "+ message);}
+
+		}
+
 	public void printSubtitle (String message){
-		this.subtitlePos += 1;
-		if (this.enableColor==true){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.subtitlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
-		else {System.out.println("\n["+this.titlePos+"] "+ message);}
+		this.subtitlePosition += 1;
+		printTitle(message, this.subtitlePosition);
+
 	}
-	
+
+	public void printMainTitle (String message) {
+		this.titlePosition += 1;
+		this.subtitlePosition = 1;
+		printTitle(message, this.titlePosition);
+
+	}
+
+
 	public void printBadNews (String message){
-		if (this.enableColor==true){System.out.println(ANSI_RED + message + ANSI_RESET);}
+		printNews(message, ANSI_RED);
+	}
+
+	public void printNews(String message, String color)
+	{
+		if (this.enableColor==true){System.out.println(color + message + ANSI_RESET);}
 		else {System.out.println(message);}
 	}
-	
+
 	public void printGoodNews (String message){
-		if (this.enableColor==true){System.out.println(ANSI_GREEN + message + ANSI_RESET);}
-		else {System.out.println(message);}
+		printNews(message, ANSI_GREEN);
 	}
-	
+
 	public void disableColor (){
 		this.enableColor = false;
 	}
-	
+
 	public void print(String message){
 		System.out.println(message);
 	}
-	
+
 	/*
 	public void printUnknownNews (String message){
 		
 	}
 	*/
 }
-
