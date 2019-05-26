@@ -1,6 +1,5 @@
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
-
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 import java.sql.*;
@@ -31,6 +30,10 @@ import javax.xml.transform.TransformerException;
 
 //Connection to a datasource
 public class SQLDataSource extends T3Connection {
+	public static final int SUCCESS = 0;
+	public static final int SOCKETERROR = 0;
+	public static final int BUFFERERROR = 0;
+	public static final int REQUESTERROR = 0;
 	
 	private static Logger myLogger = Logger.getLogger("JNDIAT");
 	private Connection connection;
@@ -45,110 +48,120 @@ public class SQLDataSource extends T3Connection {
 	
 	//Returns True if no error. Otherwise returns False
 	private boolean initDataSourceConnection(String dataSource){
+		boolean isConnection = true;
+		
 		String databaseType = "";
 		myLogger.info("SQL connection through the datasource '"+dataSource+"'");
 		try {
-			this.connection = ((DataSource)this.getCtx().lookup(dataSource)).getConnection();
-		} catch (Exception e) {
-			myLogger.severe("Impossible to get a DataSource connection: "+e);
-			return false;
+			this.connection = ((DataSource)this.getContext().lookup(dataSource)).getConnection();
+			
+			databaseType = this.connection.toString().toUpperCase();
+			if (databaseType.contains("MYSQL")){
+				this.print("Connected to a MYSQL database");
+			}else if(databaseType.contains("ORACLE")){
+				this.print("Connected to an ORACLE database");
+			}else if(databaseType.contains("SYBASE")){
+				this.print("Connected to a SYSBASE database");
+			}else{
+				this.print("Connected to a UNKNOWN database: "+databaseType);
+			}
+		} catch (Exception exception) {
+			myLogger.severe("Impossible to get a DataSource connection: "+exception);
+			isConnection = false;
 		}
-		databaseType = this.connection.toString().toUpperCase();
-		if (databaseType.contains("MYSQL")){
-			this.print("Connected to a MYSQL database");
-		}else if(databaseType.contains("ORACLE")){
-			this.print("Connected to an ORACLE database");
-		}else if(databaseType.contains("SYBASE")){
-			this.print("Connected to a SYSBASE database");
-		}else{
-			this.print("Connected to a UNKNOWN database: "+databaseType);
-		}
-		return true;
+		
+		return isConnection;
 	}
 	
 	//Returns true if all is OK. Otherwise return False
 	public boolean SQLshell (String dataSource){
-		boolean connected = false;
+		boolean isConnected = false;
+		boolean isPossible;
 		this.dataSource = dataSource;
 		this.connection();
 		if (this.isConnected() == true){
 			try {
-				connected = this.initDataSourceConnection(dataSource);
-				if (connected==true){
+				isConnected = this.initDataSourceConnection(dataSource);
+				if (isConnected==true){
 					generateSQLShell();
 				}
 				else {
-					return false;
+					isPossible = false;
 				}
-			} catch (Exception e) {
-				myLogger.severe("Impossible to get a DataSource connection: "+e);
-				return false;
+			} catch (Exception exception) {
+				myLogger.severe("Impossible to get a DataSource connection: "+exception);
+				isPossible = false;
 			}
-			return true;
+			isPossible = true;
 		}
 		else {
 			myLogger.severe("Impossible to get a SQL shell because we can't establish a connection: "+this.getLastConnectionErrorDescription());
-			return false;
+			isPossible = false;
 		}
+		return isPossible;
 	}
-	
 
 	private void generateSQLShell(){
-		Vector<String> columnNames= new Vector<String>();
 		try {
 			//source: http://jeszysblog.wordpress.com/2012/04/14/readline-style-command-line-editing-with-jline/
-			ConsoleReader console = new ConsoleReader();
-			console.setPrompt(this.dataSource+"> ");
+			ConsoleReader consoleReader = new ConsoleReader();
+			consoleReader.setPrompt(this.dataSource+"> ");
 			String sql = null;
-			while ((sql = console.readLine()) != null) {
-				columnNames= new Vector<String>();
+			boolean readSQLUntilNull = (sql = consoleReader.readLine()) != null;
+			
+			while (readSQLUntilNull) {
 				try{
-					Statement stmt = connection.createStatement();
-					ResultSet rs = stmt.executeQuery(sql);
-					DBTablePrinter.printResultSet(rs);
-				} catch (SQLException e) {
-					myLogger.severe("Error with the SQL request '"+sql+"':"+e);
+					Statement statement = connection.createStatement();
+					ResultSet resultSet = statement.executeQuery(sql);
+					DBTablePrinter.printResultSet(resultSet);
+				} catch (SQLException sqlException) {
+					myLogger.severe("Error with the SQL request '"+sql+"':"+sqlException);
 				}
 			}
-		} catch(IOException e) {
-			e.printStackTrace();
+		} catch(IOException ioException) {
+			ioException.printStackTrace();
 		} finally {
 			try {
 				TerminalFactory.get().restore();
-			} catch(Exception e) {
-				e.printStackTrace();
+			} catch(Exception exception) {
+				exception.printStackTrace();
 			}
 		}
 	}
 	
 	public String letHimSelectDatasource(){
 		int pos = 0;
-		Integer dataSourceNb = -1;
+		Integer dataSourceNumber = -1;
 		String datasourceToUse = "";
 		myLogger.fine("Let the user choose the datasource from jndi list");
 		JndiListing jndiListing = new JndiListing(this.getIp(),this.getPort(),this.getUser(),this.getPassword());
 		jndiListing.searchJndi();
+		
 		ArrayList datasources = jndiListing.getDatasources();
-		if (datasources.toArray().length>0){
-			while (dataSourceNb < 0 || dataSourceNb >= datasources.toArray().length){
+		boolean isValidDataSource = datasources.toArray().length>0;
+		
+		if (isValidDataSource){
+			boolean isValidDataSourceNumber = dataSourceNumber < 0 || dataSourceNumber >= datasources.toArray().length;
+			
+			while (isValidDataSourceNumber){
 				System.out.println("Choose the number of the datasource to use:");
-				for (pos = 0;pos<datasources.toArray().length; pos = pos+1){
+				for (pos = 0 ; pos < datasources.toArray().length ; pos = pos+1){
 					System.out.println(pos+". "+datasources.get(pos));
 				}
 				try {
-					BufferedReader is = new BufferedReader(
+					BufferedReader inputStream = new BufferedReader(
 					new InputStreamReader(System.in));
-					dataSourceNb = Integer.parseInt(is.readLine());
+					dataSourceNumber = Integer.parseInt(inputStream.readLine());
 				} 
-				catch (NumberFormatException ex) {
+				catch (NumberFormatException numberFormatException) {
 					myLogger.severe("Not a good value");
 				}
-				catch (Exception e){
+				catch (Exception exception){
 					myLogger.severe("Unexpected IO ERROR");
 				}
 			}
-			datasourceToUse = ""+datasources.get(dataSourceNb);
-			System.out.println("You have chosen the datasource '"+datasources.get(dataSourceNb)+"'");
+			datasourceToUse = ""+datasources.get(dataSourceNumber);
+			System.out.println("You have chosen the datasource '"+datasources.get(dataSourceNumber)+"'");
 		}
 		else {
 			myLogger.severe("Not one datasource in jndi list, cancelation...");
@@ -156,129 +169,131 @@ public class SQLDataSource extends T3Connection {
 		return datasourceToUse;
 	}
 	
-	/*<Results>
-		<Row>
-			<Column>
-				<Name>USER</Name>
-				<Value>ORCL_MDS</value>
-			</Column>
-		</Row>
-	</Results>*/
-	public String resultSetToXML (ResultSet rs) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, SQLException{
+	public String resultSetToXML (ResultSet resultSet) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, SQLException{
 		myLogger.finest("Parsing SQL results for XML output started");
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document doc = builder.newDocument();
+		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+		Document document = documentBuilder.newDocument();
 
-		Element results = doc.createElement("Results");
-		doc.appendChild(results);
+		Element resultOfelement = document.createElement("Results");
+		document.appendChild(resultOfelement);
 
-		ResultSetMetaData rsmd = rs.getMetaData();
-		int colCount = rsmd.getColumnCount();
+		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+		int columnCount = resultSetMetaData.getColumnCount();
 
-		while (rs.next()){
-			Element row = doc.createElement("Row");
-			results.appendChild(row);
+		while (resultSet.next()){
+			Element elementOfRow = document.createElement("Row");
+			resultOfelement.appendChild(elementOfRow);
 
 			myLogger.finest("Paring a new line");
-			for (int i = 1; i <= colCount; i++){
-				String columnName = rsmd.getColumnName(i);
-				Object value = rs.getObject(i);
+			for (int i = 1; i <= columnCount; i++){
+				String columnName = resultSetMetaData.getColumnName(i);
+				Object value = resultSet.getObject(i);
 				myLogger.finest("value = '"+value.toString()+"'");
-				//Element node = doc.createElement(columnName);
-				//node.appendChild(doc.createTextNode(value.toString()));
-				//row.appendChild(node);
 				myLogger.finest("Node appened in xml");
 				
-				//
-				Element column = doc.createElement("Column");
-				row.appendChild(column);
-				Element nameNode = doc.createElement("Name");
-				nameNode.appendChild(doc.createTextNode(columnName));
-				column.appendChild(nameNode);
-				Element valueNode = doc.createElement("Value");
-				valueNode.appendChild(doc.createTextNode(value.toString()));
-				column.appendChild(valueNode);
-				//
+				Element elementOfColumn = document.createElement("Column");
+				elementOfRow.appendChild(elementOfColumn);
+				Element nameNode = document.createElement("Name");
+				nameNode.appendChild(document.createTextNode(columnName));
+				elementOfColumn.appendChild(nameNode);
+				Element valueNode = document.createElement("Value");
+				valueNode.appendChild(document.createTextNode(value.toString()));
+				elementOfColumn.appendChild(valueNode);
+				
 			}
 		}
-		StringWriter sw = new StringWriter();
-		TransformerFactory tf = TransformerFactory.newInstance();
-		Transformer transformer = tf.newTransformer();
+		StringWriter stringWriter = new StringWriter();
+		TransformerFactory transFormerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transFormerFactory.newTransformer();
 		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 		transformer.setOutputProperty(OutputKeys.METHOD, "xml");
 		transformer.setOutputProperty(OutputKeys.INDENT, "no");
 		transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-		transformer.transform(new DOMSource(doc), new StreamResult(sw));
+		transformer.transform(new DOMSource(document), new StreamResult(stringWriter));
 		myLogger.finest("Parsing SQL results for XML output stopped");
-		return sw.toString();
+		return stringWriter.toString();
 	}
 	
-	public Integer listenFromRequest(int port, String dataSource){
+	private int checkConnection(int port, String dataSource) {
+		int result=0;
+		
 		myLogger.fine("Listening on the port "+port+" for SQL requests");
-		ServerSocket s = null;
-		Socket soc = null;
-		BufferedReader bReader = null;
-		PrintWriter bWriter = null;
+		ServerSocket serverSocket = null;
+		Socket socket = null;
+		BufferedReader bufferReader = null;
+		PrintWriter printWriter = null;
 		this.connection();
 		if (this.isConnected() == true){
 			this.initDataSourceConnection(dataSource);
+			result = SUCCESS;
 			try{
-				s = new ServerSocket(port);
-				soc = s.accept();
+				serverSocket = new ServerSocket(port);
+				socket = serverSocket.accept();
 				myLogger.finer("A new connection has been established");
-			} catch (IOException e) {
-				myLogger.severe("Could not listen on port "+port);
-				return -1;
+			} catch (IOException ioException) {
+				myLogger.severe("Could not listen on port " + port);
+				result = SOCKETERROR;
 			}
 			try{
-				bReader = new BufferedReader(new InputStreamReader(soc.getInputStream()));
-				bWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(soc.getOutputStream())),true);
-			} catch (IOException e) {
+				bufferReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())),true);
+			} catch (IOException ioException) {
 				myLogger.severe("Impossible to get a read or write buffer");
-				return -2;
+				result = BUFFERERROR;
 			}
+		}
+		return result;
+	}
+	
+	public Integer listenFromRequest(int port, String dataSource){
+		int result = SUCCESS;
+		result = checkConnection(port, dataSource);
+		
+		BufferedReader bufferReader = null;
+		PrintWriter printWriter = null;
+			
 			while (true) {
 				boolean executionError = false;
 				String request = "";
 				String response = "";
-				ResultSet rs = null;
-				Statement stmt = null;
+				ResultSet resultSet = null;
+				Statement statement = null;
 				try{
 					myLogger.finer("Waiting a SQL request...");
-					request = bReader.readLine();
+					request = bufferReader.readLine();
 					if (request == null) break;
-				} catch (IOException e) {
+				} catch (IOException ioException) {
 					myLogger.severe("Impossible to get data from client");
-					return -3;
+					result = REQUESTERROR;
 				}
 				myLogger.finer("Received from client: '"+request+"'");
 				if (request.equals("END")) break;
 				try{
-					stmt = connection.createStatement();
-					rs = stmt.executeQuery(request);
+					statement = connection.createStatement();
+					resultSet = statement.executeQuery(request);
 					executionError = false;
-				} catch(SQLException e) {
-					response = "<error>"+e+"</error>";
+				} catch(SQLException sqlException) {
+					response = "<error>"+sqlException+"</error>";
 					executionError = true;
-					myLogger.severe("SQL Error with the request '"+request+"':"+e);
-				} catch (Exception e) {
+					myLogger.severe("SQL Error with the request '"+request+"':"+sqlException);
+				} catch (Exception exception) {
 					executionError = true;
-					response = "<error>server side error during XML paring: '"+e+"'</error>";
-					myLogger.severe("Error with the SQL request '"+request+"':"+e);
+					response = "<error>server side error during XML paring: '"+exception+"'</error>";
+					myLogger.severe("Error with the SQL request '"+request+"':"+exception);
 				}
 				if (executionError==false){
 					try{
-						response = resultSetToXML(rs);
-					} catch (Exception e) {
-						myLogger.severe("Error with the response '"+response+"':"+e);
+						response = resultSetToXML(resultSet);
+					} catch (Exception exception) {
+						myLogger.severe("Error with the response '"+response+"':"+exception);
 					}
 				}
 				myLogger.finer("Sending response to client: '"+response+"'");
-				bWriter.println(response);
+				printWriter.println(response);
 			}
-		}
-		return 0;
+		
+		return result;
 	}
 }
 
