@@ -1,6 +1,7 @@
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
 
+
 import javax.naming.*;
 import java.util.logging.Logger;
 import java.util.Arrays;
