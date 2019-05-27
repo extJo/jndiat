@@ -1,6 +1,7 @@
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
 
+
 import java.util.logging.Logger;
 import java.io.*;
 //To get a remote certificate
