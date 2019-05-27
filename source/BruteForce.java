@@ -1,6 +1,7 @@
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
 
+
 import javax.naming.*;
 import java.util.logging.Logger;
 import java.util.Arrays;
@@ -16,84 +17,86 @@ public class BruteForce extends T3Connection{
 
 	private static Logger myLogger = Logger.getLogger("JNDIAT");	
 	private List<String[]> accountsFound;
-	private String credFilename;
+	private String credentialFilename;
 	private String ip;
 	private Integer port;
 	private String separator;
 			
 	//*************   Constructor *************
-	public BruteForce(String ip, Integer port, String initial_context_factory, boolean printErrorConnection, String credFilename, String separator){
+	public BruteForce(String ip, Integer port, String initial_context_factory, boolean printErrorConnection, String credentialFilename, String separator){
 		super(initial_context_factory, false);
 		myLogger.fine("Brutforce object created");
 		this.ip = ip;
 		this.port = port;
 		this.accountsFound = new ArrayList<String[]>();
-		this.credFilename = credFilename;
+		this.credentialFilename = credentialFilename;
 		this.separator = separator;
 	}
 	
 	/*Search valid credentials
 	 * Return True if no error
 	 * Otherwise return true */
-	public boolean searchValidCreds(){
+	public boolean searchValidCredentials(){
+		boolean resultOfsearchValidCredential = true;
 		String line = "";
-		String[] creds = {};
+		String[] credentials = {};
 		boolean connectionStatus = false;
 		BufferedReader reader = null;
 		try {
-			if (this.credFilename==""){
+			if (this.credentialFilename==""){
 				myLogger.finer("We use the credentials.txt file stored in the Jar file");
 				URL urlToDictionary = this.getClass().getResource("/" + "credentials.txt");
 				reader = new BufferedReader(new InputStreamReader(urlToDictionary.openStream(), "UTF-8"));
-				credFilename = "jar://credentials.txt";
+				credentialFilename = "jar://credentials.txt";
 			}
 			else {
 				myLogger.finer("We use your own file stored");
-				reader = new BufferedReader(new FileReader(this.credFilename));
+				reader = new BufferedReader(new FileReader(this.credentialFilename));
 			}
 		}
-		catch (Exception e){
-			myLogger.severe("Exception occurred trying to read '"+this.credFilename+"': '"+e+"'");
-			return false;
+		catch (Exception exception){
+			myLogger.severe("Exception occurred trying to read '"+this.credentialFilename+"': '"+exception+"'");
+			resultOfsearchValidCredential = false;
 		}
-		myLogger.fine("Searching valid credentials thanks to "+this.credFilename+" file...");			
+		myLogger.fine("Searching valid credentials thanks to "+this.credentialFilename+" file...");			
 		try {
 			while ((line = reader.readLine()) != null){
-				creds = line.replaceAll("\n","").replaceAll("\t","").replaceAll("\r","").split(this.separator);
-				if (creds.length == 0) {creds = new String[]{"",""};};
-				myLogger.finer("Using the username '"+creds[0]+"' and the password '"+creds[1]+"'");
-				connectionStatus = connection (this.ip, this.port, creds[0], creds[1]);
+				credentials = line.replaceAll("\n","").replaceAll("\t","").replaceAll("\r","").split(this.separator);
+				if (credentials.length == 0) {credentials = new String[]{"",""};};
+				myLogger.finer("Using the username '"+credentials[0]+"' and the password '"+credentials[1]+"'");
+				connectionStatus = connection (this.ip, this.port, credentials[0], credentials[1]);
 				if (connectionStatus == true){
-					myLogger.fine("We can use the login '"+creds[0]+"' with the password '"+creds[1]+"' to establish a T3 connection");
-					this.accountsFound.add(creds);
+					myLogger.fine("We can use the login '"+credentials[0]+"' with the password '"+credentials[1]+"' to establish a T3 connection");
+					this.accountsFound.add(credentials);
 				}
 				else {
-					myLogger.finer("We can't use the login '"+creds[0]+"' with the password '"+creds[1]+"' to establish a T3 connection");
+					myLogger.finer("We can't use the login '"+credentials[0]+"' with the password '"+credentials[1]+"' to establish a T3 connection");
 				}
 			}
 			reader.close();
 		}
-		catch (Exception e){
-			myLogger.warning("Exception occurred trying to use credentials stored the line '"+line+"' ('"+this.credFilename+"' file): '"+e+"'");
+		catch (Exception exception){
+			myLogger.warning("Exception occurred trying to use credentials stored the line '"+line+"' ('"+this.credentialFilename+"' file): '"+exception+"'");
 		}
-		return true;	
+		return resultOfsearchValidCredential;	
 	}
 	
 	public List<String[]> getValidAccounts (){
 		return this.accountsFound;
 	}
 	
-	public void printValidCreds(){
-		String line="";
-		int pos = 0;
-		if (this.accountsFound.toArray().length == 0){
+	public void printValidCredentials(){
+		String lineForPrint="";
+		int position = 0;
+		boolean isNotValidCredential = this.accountsFound.toArray().length == 0;
+		if (isNotValidCredential){
 			this.printBadNews ("No credentials found to connect");
 		}
 		else {
-			for (pos = 0;pos<this.accountsFound.toArray().length; pos = pos+1){
-				line = line + ", login='"+this.accountsFound.get(pos)[0]+ "'/password='"+this.accountsFound.get(pos)[1]+"'";
+			for (position = 0;position<this.accountsFound.toArray().length; position = position+1){
+				lineForPrint = lineForPrint + ", login='"+this.accountsFound.get(position)[0]+ "'/password='"+this.accountsFound.get(position)[1]+"'";
 			}
-			this.printGoodNews ("Some credentials found: "+line);
+			this.printGoodNews ("Some credentials found: "+lineForPrint);
 		}
 	}
 }

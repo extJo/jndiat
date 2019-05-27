@@ -1,5 +1,6 @@
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
+ 
 
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -17,27 +18,27 @@ public class T3Connection extends MyPrinter {
 	private String password;
 	private String uri;
 	private String initial_context_factory;
-	private Context ctx;
-	private boolean cntionErrorAsSevereError;
+	private Context context;
+	private boolean connectionErrorAsSevereError;
 	private String lastConnectionErrorDescription;
 	private T3s t3s;
 	
 	//*************   Constructor *************
-	public T3Connection(String initial_context_factory, boolean cntionErrorAsSevereError){
+	public T3Connection(String initial_context_factory, boolean connectionErrorAsSevereError){
 		super();
 		myLogger.fine("T3Connection object created");
 		this.initial_context_factory = initial_context_factory;
-		this.ctx = null;
-		this.cntionErrorAsSevereError = cntionErrorAsSevereError;
+		this.context = null;
+		this.connectionErrorAsSevereError = connectionErrorAsSevereError;
 		this.t3s = null;
 	}
 	
-	public T3Connection(String ip, int port, String username, String password, String initial_context_factory, boolean cntionErrorAsSevereError){
+	public T3Connection(String ip, int port, String username, String password, String initial_context_factory, boolean connectionErrorAsSevereError){
 		super();
 		myLogger.fine("T3Connection object created");
 		this.initial_context_factory = initial_context_factory;
-		this.ctx = null;
-		this.cntionErrorAsSevereError = cntionErrorAsSevereError;
+		this.context = null;
+		this.connectionErrorAsSevereError = connectionErrorAsSevereError;
 		this.ip = ip;
 		this.port = port;
 		this.user = username;
@@ -48,59 +49,70 @@ public class T3Connection extends MyPrinter {
 	//*************   Connection *************
 	//Return True if connected. Otherwise return False
 	public boolean connection (String ip, int port, String username, String password){
+		boolean resultOfConnection = false;
 		myLogger.fine("Try to establish a connection to "+ip+":"+port+" with credentials '"+username+"'/'"+password+"'");
 		this.ip = ip;
 		this.port = port;
 		this.user = username;
 		this.password = password;
 		this.uri = "t3://"+ this.ip +":"+ this.port +"";
-		Hashtable<String, String> env = new Hashtable<String, String>();
-		env.put(Context.INITIAL_CONTEXT_FACTORY, this.initial_context_factory);
-		env.put(Context.PROVIDER_URL,this.uri);
-		env.put(Context.SECURITY_PRINCIPAL,this.user);
-		env.put(Context.SECURITY_CREDENTIALS,this.password);
+		Hashtable<String, String> environmentOfConnection = new Hashtable<String, String>();
+		environmentOfConnection.put(Context.INITIAL_CONTEXT_FACTORY, this.initial_context_factory);
+		environmentOfConnection.put(Context.PROVIDER_URL,this.uri);
+		environmentOfConnection.put(Context.SECURITY_PRINCIPAL,this.user);
+		environmentOfConnection.put(Context.SECURITY_CREDENTIALS,this.password);
 		try {
-			this.ctx = new InitialContext(env);
+			this.context = new InitialContext(environmentOfConnection);
 			myLogger.info("The connection is established trough the T3 protocol (no encryption)");
 			myLogger.fine("You can use "+ip+":"+port+" with credentials '"+username+"'/'"+password+"'");
-			return true;
-		}catch (CommunicationException er) {
-			if (er.toString().contains(ERROR_CONNECTION_RESET)){
+			resultOfConnection = true;
+		}catch (CommunicationException communicationException) {
+			resultOfConnection = false;
+			boolean isConnectionReset = communicationException.toString().contains(ERROR_CONNECTION_RESET);
+			if (isConnectionReset){
 				myLogger.fine("Trying to connect with t3s (t3 over SSL) because there is a reset with t3");
 				this.t3s = new T3s (this.ip, this.port);
 				if (t3s.makeT3sConfig() == false){
 					myLogger.severe("Impossible to make the T3s configuration");
-					return false;
-				}
-				else {
+				}else {
 					myLogger.fine("T3s configuration made");
 				}
 				this.uri = "t3s://"+ this.ip +":"+ this.port +"";
-				env.put(Context.PROVIDER_URL,this.uri);
+				environmentOfConnection.put(Context.PROVIDER_URL,this.uri);
 				try {
-					this.ctx = new InitialContext(env);
+					this.context = new InitialContext(environmentOfConnection);
 					myLogger.info("The connection is established trough the T3s protocol (SSL/TLS encryption)");
 					myLogger.fine("You can use "+ip+":"+port+" with credentials '"+username+"'/'"+password+"'");
-					return true;
-				}catch (AuthenticationException e) {
-					if (this.cntionErrorAsSevereError == true){myLogger.severe("'"+this.user+"' can't be authenticated on "+ip+":"+port);}
-					else {myLogger.fine("Can't be authenticated on "+ip+":"+port+"with credentials '"+username+"'/'"+password+"': invalid credentials");}
-					this.lastConnectionErrorDescription = e.toString();
-				}catch (Exception e) {
-					this.genericConnectionErrorPrinter(e);
+					resultOfConnection = true;
+				}catch (AuthenticationException authenticationException) {
+					if (this.connectionErrorAsSevereError == true){
+						myLogger.severe("'"+this.user+"' can't be authenticated on "+ip+":"+port);
+						}
+					else {
+						myLogger.fine("Can't be authenticated on "+ip+":"+port+"with credentials '"+username+"'/'"+password+"': invalid credentials");
+						}
+					this.lastConnectionErrorDescription = authenticationException.toString();
+				}catch (Exception exception) {
+					this.genericConnectionErrorPrinter(exception);
 				}
 			}
 			else {
-				this.genericConnectionErrorPrinter(er);
+				this.genericConnectionErrorPrinter(communicationException);
 			}
-		}catch (AuthenticationException e) {
-			if (this.cntionErrorAsSevereError == true){myLogger.severe("'"+this.user+"' can't be authenticated on "+ip+":"+port);}
-			else {myLogger.fine("Can't be authenticated on "+ip+":"+port+"with credentials '"+username+"'/'"+password+"': invalid credentials");}
-			this.lastConnectionErrorDescription = e.toString();
-		}catch (Exception e) {
-			this.genericConnectionErrorPrinter(e);
+		}catch (AuthenticationException authenticationException) {
+			resultOfConnection = false;
+			if (this.connectionErrorAsSevereError == true)
+			{
+				myLogger.severe("'"+this.user+"' can't be authenticated on "+ip+":"+port);
+			}else {
+				myLogger.fine("Can't be authenticated on "+ip+":"+port+"with credentials '"+username+"'/'"+password+"': invalid credentials");
+				}
+			this.lastConnectionErrorDescription = authenticationException.toString();
+		}catch (Exception exception) {
+			this.genericConnectionErrorPrinter(exception);
+			resultOfConnection = false;
 		}
-		return false;
+		return resultOfConnection;
 	}
 	
 	public boolean connection (){
@@ -109,18 +121,26 @@ public class T3Connection extends MyPrinter {
 	
 	//*************   Deconnection *************
 	//Return True if deconnected. Otherwise return False
-	public boolean deconnection (){
+	public boolean disConnection (){
+		boolean resultOfConnection = true;
 		try {
-			this.ctx.close();
-			return true;
-		}catch (Exception e) {
-			return false;
+			this.context.close();
+		}catch (Exception exception) {
+			resultOfConnection = false;
 		}
+		return resultOfConnection;
 	}
 	
 	public boolean isConnected (){
-		if (this.ctx==null){return false;}
-		else {return true;}
+		boolean resultOfConnection;;
+		if (this.context==null)
+		{
+			resultOfConnection = false;
+		}else 
+		{
+			resultOfConnection = true;
+		}
+		return resultOfConnection;
 	}
 	
 	//Contains the last connection error descrition 
@@ -129,20 +149,22 @@ public class T3Connection extends MyPrinter {
 	}
 	
 	/* Print a Generic error connection*/
-	public void genericConnectionErrorPrinter (Exception er){
-		if (this.cntionErrorAsSevereError == true){
-			myLogger.severe("Error during connection with '"+this.user+"' to "+this.ip+":"+this.port+":"+er.toString());
-			if (er.toString().contains(this.ERROR_STREAM_CLOSED)) {
+	public void genericConnectionErrorPrinter (Exception exception){
+		boolean isServerError = this.connectionErrorAsSevereError == true;
+		boolean isStreamClosed = exception.toString().contains(this.ERROR_STREAM_CLOSED);
+		
+		if (isServerError){
+			myLogger.severe("Error during connection with '"+this.user+"' to "+this.ip+":"+this.port+":"+exception.toString());
+			if (isStreamClosed) {
 				myLogger.severe("You should retry to establish a connection: The server is probably busy");
 			}
-		}
-		else {
-			myLogger.fine("Error during connection with '"+this.user+"' to "+this.ip+":"+this.port+":"+er.toString());
-			if (er.toString().contains(this.ERROR_STREAM_CLOSED)) {
+		}else {
+			myLogger.fine("Error during connection with '"+this.user+"' to "+this.ip+":"+this.port+":"+exception.toString());
+			if (isStreamClosed) {
 				myLogger.fine("You should retry to establish a connection: The server is probably busy");
 			}
 		}
-		this.lastConnectionErrorDescription = er.toString();
+		this.lastConnectionErrorDescription = exception.toString();
 	}
 	
 	//*************   ACCESSEURS *************
@@ -161,8 +183,8 @@ public class T3Connection extends MyPrinter {
 	public String getPassword (){
 		return this.password;
 	}
-	public Context getCtx(){
-		return this.ctx;
+	public Context getContext(){
+		return this.context;
 	}
 	
 	//*************   MUTATEURS *************
