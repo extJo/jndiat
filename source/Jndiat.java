@@ -175,7 +175,7 @@ public class Jndiat extends MyPrinter {
 		myLogger.fine("Arguments and Options given: "+ns);
 		if (ns.getString("module")=="scan") {
 			if (ns.getString("ports")!=""){
-			this.printTitle("Scanning port(s) with the T3 protocol");
+			this.printMainTitle("Scanning port(s) with the T3 protocol");
 			myLogger.info("You want to scan the "+ns.getString("server")+" target on port(s) "+ns.getString("ports")+", starting...");
 			Scanner scanner = new Scanner();
 			this.disableColorInObjectIfNeeded(scanner);
@@ -188,16 +188,16 @@ public class Jndiat extends MyPrinter {
 		}
 		//Search valid credentials
 		if (ns.getString("module")=="bruteforce") {
-			this.printTitle("Searching valid credentials");
+			this.printMainTitle("Searching valid credentials");
 			myLogger.info("You want to search valid credentials to "+ns.getString("server")+" target on port "+ns.getString("port")+", starting...");
 			BruteForce bruteForce = new BruteForce(ns.getString("server"),ns.getInt("port"),"weblogic.jndi.WLInitialContextFactory", false, ns.getString("cred-file"), ns.getString("separator"));
 			this.disableColorInObjectIfNeeded(bruteForce);
-			bruteForce.searchValidCreds();
-			bruteForce.printValidCreds();
+			bruteForce.searchValidCredentials();
+			bruteForce.printValidCredentials();
 		}
 		//connect and list JNDI
 		if (ns.getString("module")=="list"){
-			this.printTitle("Listing JNDI accessible with the T3 protocol");
+			this.printMainTitle("Listing JNDI accessible with the T3 protocol");
 			myLogger.info("You want to list JNDI on the "+ns.getString("server")+" target on port "+ns.getInt("port")+", starting...");
 			JndiListing jndiListing = new JndiListing(ns.getString("server"),ns.getInt("port"),ns.getString("username"),ns.getString("password"));
 			jndiListing.printJndi();
@@ -209,7 +209,7 @@ public class Jndiat extends MyPrinter {
 			SQLDataSource sqlDataSource = new SQLDataSource(ns.getString("server"),ns.getInt("port"),ns.getString("username"),ns.getString("password"));
 			//sqlshell
 			if (ns.getBoolean("sqlshell")==true){
-				this.printTitle("You want a SQL shell");
+				this.printMainTitle("You want a SQL shell");
 				String dataSourceArg = ns.getString("datasource");
 				if (dataSourceArg == null){
 					dataSourceArg = sqlDataSource.letHimSelectDatasource();
@@ -225,7 +225,7 @@ public class Jndiat extends MyPrinter {
 			//listen for requests
 			else if (ns.getInt("listen-port")!=null){
 				int port = ns.getInt("listen-port");
-				this.printTitle("You want listen for SQL requests");
+				this.printMainTitle("You want listen for SQL requests");
 				String dataSourceArg = ns.getString("datasource");
 				if (dataSourceArg == null){
 					dataSourceArg = sqlDataSource.letHimSelectDatasource();
@@ -246,7 +246,7 @@ public class Jndiat extends MyPrinter {
 		
 		//mejb module
 		if (ns.getString("module")=="mejb"){
-			this.printTitle("Accessing the MEJB through T3 protocol");
+			this.printMainTitle("Accessing the MEJB through T3 protocol");
 			myLogger.info("You want to access the MEJB on the "+ns.getString("server")+" target on port "+ns.getInt("port")+", starting...");
 			Mejb mejb = new Mejb(ns.getString("server"),ns.getInt("port"),ns.getString("username"),ns.getString("password"));
 			mejb.getAllJMONames();
@@ -256,7 +256,7 @@ public class Jndiat extends MyPrinter {
 		if (ns.getString("module")=="deployer"){
 			Deployer deployer = new Deployer(ns.getString("server"),ns.getInt("port"),ns.getString("username"),ns.getString("password"),ns.getString("target"));
 			if (ns.getBoolean("deploy")==true){
-				this.printTitle("Deploy the application "+ns.getString("app-file"));
+				this.printMainTitle("Deploy the application "+ns.getString("app-file"));
 				if (new File(ns.getString("app-file")).exists()==false){
 					this.printBadNews("The file "+ns.getString("app-file")+" doesn't exist. You must define an application to deploy with --appl-file");
 				}
@@ -273,7 +273,7 @@ public class Jndiat extends MyPrinter {
 				}
 			}
 			else if (ns.getBoolean("undeploy")==true){
-				this.printTitle("Undeploy the application named "+ns.getString("display-name")+" remotely");
+				this.printMainTitle("Undeploy the application named "+ns.getString("display-name")+" remotely");
 				myLogger.info("You want to undeploy the application "+ns.getString("display-name")+" from "+ns.getString("server")+":"+ns.getInt("port")+", starting...");
 				boolean status = deployer.undeploy(ns.getString("display-name"));
 				if (status == false) {
@@ -284,7 +284,7 @@ public class Jndiat extends MyPrinter {
 				}
 			}
 			else if (ns.getBoolean("list")==true){
-				this.printTitle("List applications deployed");
+				this.printMainTitle("List applications deployed");
 				boolean status = deployer.listApplications();
 			}
 			else {
