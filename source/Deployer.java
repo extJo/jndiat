@@ -273,9 +273,9 @@ public class Deployer extends MyPrinter{
 	}
 	
 	private String getStackTrace (Exception e){
-	 	StringWriter sw = new StringWriter();
-		e.printStackTrace(new PrintWriter(sw));
-		return sw.toString();
+	 	StringWriter stringwriter = new StringWriter();
+		e.printStackTrace(new PrintWriter(stringwriter));
+		return stringwriter.toString();
 	}
 	
 }

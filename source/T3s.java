@@ -40,10 +40,13 @@ public class T3s {
 	public boolean makeT3sConfig(){
 		myLogger.fine("Making the T3s configuration (t3 over SSL)");
 		this.initWeblogicPropertiesForKeyStore();
-		if (this.isKeyStoreFileExist()==false){
-			if (this.saveTheRemoteCertificate()==true){
+		boolean keyStroeFileIsNotExist = this.isKeyStoreFileExist()==false;
+		if (keyStroeFileIsNotExist){
+			boolean saveTheRemoteCertificateIsTrue = this.saveTheRemoteCertificate()==true;
+			if (saveTheRemoteCertificateIsTrue){
 				boolean status = this.createAValidKeyStore();
-				if (status == false){
+				boolean statusIsFalse = status == false;
+				if (statusIsFalse){
 					return false;
 				}
 				else {
@@ -80,7 +83,8 @@ public class T3s {
 			BufferedInputStream inBufStreamToCertFile = new BufferedInputStream(inStreamToCertFile);
 			FileOutputStream outFileStreamToKeyStore = new FileOutputStream(TEMP_KEYSTORE_FILE);
 			CertificateFactory cf = CertificateFactory.getInstance("X.509");
-			while (inBufStreamToCertFile.available() > 0) {
+			boolean bufferStreamToCertFileIsAvailable = inBufStreamToCertFile.available() > 0;
+			while (bufferStreamToCertFileIsAvailable) {
 				myLogger.fine("Loading in the keystore a certificat stored in "+TEMP_CERT_FILE);
 				Certificate cert = cf.generateCertificate(inBufStreamToCertFile);
 				theKeyStore.setCertificateEntry("fiddler"+inBufStreamToCertFile.available(), cert);
@@ -156,7 +160,8 @@ public class T3s {
 	public boolean deleteFile(String fileName){
 		try{
 			File file = new File(fileName);
-			if(file.delete()){
+			boolean deleteFile = file.delete();
+			if(deleteFile){
 				myLogger.fine("The file "+fileName+" has been removed");
 				return true;
 			}

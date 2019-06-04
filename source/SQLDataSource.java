@@ -71,10 +71,12 @@ public class SQLDataSource extends T3Connection {
 		boolean connected = false;
 		this.dataSource = dataSource;
 		this.connection();
-		if (this.isConnected() == true){
+		boolean dataSourceIsConnected = this.isConnected() == true;
+		if (dataSourceIsConnected){
 			try {
 				connected = this.initDataSourceConnection(dataSource);
-				if (connected==true){
+				boolean isConnected = connected==true;
+				if (isConnected){
 					generateSQLShell();
 				}
 				else {
@@ -100,12 +102,13 @@ public class SQLDataSource extends T3Connection {
 			ConsoleReader console = new ConsoleReader();
 			console.setPrompt(this.dataSource+"> ");
 			String sql = null;
-			while ((sql = console.readLine()) != null) {
+			boolean sqlDataRemain = (sql = console.readLine()) != null;
+			while (sqlDataRemain) {
 				columnNames= new Vector<String>();
 				try{
 					Statement stmt = connection.createStatement();
-					ResultSet rs = stmt.executeQuery(sql);
-					DBTablePrinter.printResultSet(rs);
+					ResultSet resultset = stmt.executeQuery(sql);
+					DBTablePrinter.printResultSet(resultset);
 				} catch (SQLException e) {
 					myLogger.severe("Error with the SQL request '"+sql+"':"+e);
 				}
@@ -122,7 +125,7 @@ public class SQLDataSource extends T3Connection {
 	}
 	
 	public String letHimSelectDatasource(){
-		int pos = 0;
+		int position = 0;
 		Integer dataSourceNb = -1;
 		String datasourceToUse = "";
 		myLogger.fine("Let the user choose the datasource from jndi list");
@@ -132,8 +135,8 @@ public class SQLDataSource extends T3Connection {
 		if (datasources.toArray().length>0){
 			while (dataSourceNb < 0 || dataSourceNb >= datasources.toArray().length){
 				System.out.println("Choose the number of the datasource to use:");
-				for (pos = 0;pos<datasources.toArray().length; pos = pos+1){
-					System.out.println(pos+". "+datasources.get(pos));
+				for (position = 0;position<datasources.toArray().length; position = position+1){
+					System.out.println(position+". "+datasources.get(position));
 				}
 				try {
 					BufferedReader is = new BufferedReader(
@@ -164,76 +167,77 @@ public class SQLDataSource extends T3Connection {
 			</Column>
 		</Row>
 	</Results>*/
-	public String resultSetToXML (ResultSet rs) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, SQLException{
+	public String resultSetToXML (ResultSet resultset) throws ParserConfigurationException, TransformerConfigurationException, TransformerException, SQLException{
 		myLogger.finest("Parsing SQL results for XML output started");
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document doc = builder.newDocument();
+		Document document = builder.newDocument();
 
-		Element results = doc.createElement("Results");
-		doc.appendChild(results);
+		Element results = document.createElement("Results");
+		document.appendChild(results);
 
-		ResultSetMetaData rsmd = rs.getMetaData();
-		int colCount = rsmd.getColumnCount();
+		ResultSetMetaData resultsetmetadata = resultset.getMetaData();
+		int colCount = resultsetmetadata.getColumnCount();
 
-		while (rs.next()){
-			Element row = doc.createElement("Row");
+		while (resultset.next()){
+			Element row = document.createElement("Row");
 			results.appendChild(row);
 
 			myLogger.finest("Paring a new line");
 			for (int i = 1; i <= colCount; i++){
-				String columnName = rsmd.getColumnName(i);
-				Object value = rs.getObject(i);
+				String columnName = resultsetmetadata.getColumnName(i);
+				Object value = resultset.getObject(i);
 				myLogger.finest("value = '"+value.toString()+"'");
-				//Element node = doc.createElement(columnName);
-				//node.appendChild(doc.createTextNode(value.toString()));
+				//Element node = document.createElement(columnName);
+				//node.appendChild(document.createTextNode(value.toString()));
 				//row.appendChild(node);
 				myLogger.finest("Node appened in xml");
 				
 				//
-				Element column = doc.createElement("Column");
+				Element column = document.createElement("Column");
 				row.appendChild(column);
-				Element nameNode = doc.createElement("Name");
-				nameNode.appendChild(doc.createTextNode(columnName));
+				Element nameNode = document.createElement("Name");
+				nameNode.appendChild(document.createTextNode(columnName));
 				column.appendChild(nameNode);
-				Element valueNode = doc.createElement("Value");
-				valueNode.appendChild(doc.createTextNode(value.toString()));
+				Element valueNode = document.createElement("Value");
+				valueNode.appendChild(document.createTextNode(value.toString()));
 				column.appendChild(valueNode);
 				//
 			}
 		}
-		StringWriter sw = new StringWriter();
-		TransformerFactory tf = TransformerFactory.newInstance();
-		Transformer transformer = tf.newTransformer();
+		StringWriter stringWriter = new StringWriter();
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transformerFactory.newTransformer();
 		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 		transformer.setOutputProperty(OutputKeys.METHOD, "xml");
 		transformer.setOutputProperty(OutputKeys.INDENT, "no");
 		transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-		transformer.transform(new DOMSource(doc), new StreamResult(sw));
+		transformer.transform(new DOMSource(document), new StreamResult(stringWriter));
 		myLogger.finest("Parsing SQL results for XML output stopped");
-		return sw.toString();
+		return stringWriter.toString();
 	}
 	
 	public Integer listenFromRequest(int port, String dataSource){
 		myLogger.fine("Listening on the port "+port+" for SQL requests");
-		ServerSocket s = null;
-		Socket soc = null;
-		BufferedReader bReader = null;
-		PrintWriter bWriter = null;
+		ServerSocket serverSocket = null;
+		Socket socket = null;
+		BufferedReader bufferReader = null;
+		PrintWriter bufferWriter = null;
 		this.connection();
-		if (this.isConnected() == true){
+		boolean dataSourceIsConnected = this.isConnected() == true;
+		if (dataSourceIsConnected){
 			this.initDataSourceConnection(dataSource);
 			try{
-				s = new ServerSocket(port);
-				soc = s.accept();
+				serverSocket = new ServerSocket(port);
+				socket = serverSocket.accept();
 				myLogger.finer("A new connection has been established");
 			} catch (IOException e) {
 				myLogger.severe("Could not listen on port "+port);
 				return -1;
 			}
 			try{
-				bReader = new BufferedReader(new InputStreamReader(soc.getInputStream()));
-				bWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(soc.getOutputStream())),true);
+				bufferReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				bufferWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())),true);
 			} catch (IOException e) {
 				myLogger.severe("Impossible to get a read or write buffer");
 				return -2;
@@ -242,21 +246,23 @@ public class SQLDataSource extends T3Connection {
 				boolean executionError = false;
 				String request = "";
 				String response = "";
-				ResultSet rs = null;
-				Statement stmt = null;
+				ResultSet resultset = null;
+				Statement statement = null;
 				try{
 					myLogger.finer("Waiting a SQL request...");
-					request = bReader.readLine();
-					if (request == null) break;
+					request = bufferReader.readLine();
+					boolean requestIsNotExist = request == null;
+					if (requestIsNotExist) break;
 				} catch (IOException e) {
 					myLogger.severe("Impossible to get data from client");
 					return -3;
 				}
 				myLogger.finer("Received from client: '"+request+"'");
-				if (request.equals("END")) break;
+				boolean requestIsEnd = request.equals("END");
+				if (requestIsEnd) break;
 				try{
-					stmt = connection.createStatement();
-					rs = stmt.executeQuery(request);
+					statement = connection.createStatement();
+					resultset = statement.executeQuery(request);
 					executionError = false;
 				} catch(SQLException e) {
 					response = "<error>"+e+"</error>";
@@ -269,13 +275,13 @@ public class SQLDataSource extends T3Connection {
 				}
 				if (executionError==false){
 					try{
-						response = resultSetToXML(rs);
+						response = resultSetToXML(resultset);
 					} catch (Exception e) {
 						myLogger.severe("Error with the response '"+response+"':"+e);
 					}
 				}
 				myLogger.finer("Sending response to client: '"+response+"'");
-				bWriter.println(response);
+				bufferWriter.println(response);
 			}
 		}
 		return 0;

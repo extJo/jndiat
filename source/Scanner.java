@@ -23,7 +23,7 @@ public class Scanner extends T3Connection{
 	 * Compute openedPorts */
 	public void scan (String ip, String ports, String username, String password){
 		myLogger.info("Scanning ports '"+ports+"' of "+ip+" with password '"+username+"' and password '"+password+"'");
-		int nb;
+		int number;
 		boolean connected = false;
 		String[] portsList = new String[] {};
 		if (ports.contains(",")==true){
@@ -46,9 +46,9 @@ public class Scanner extends T3Connection{
 			//ports contains a port only
 			portsList = new String[] {ports};
 		}
-		for (nb=0; nb<portsList.length; nb++) {
-			myLogger.fine("Scanning the port "+portsList[nb]);
-			int portToTest = Integer.valueOf(portsList[nb]);
+		for (number=0; number<portsList.length; number++) {
+			myLogger.fine("Scanning the port "+portsList[number]);
+			int portToTest = Integer.valueOf(portsList[number]);
 			connected = this.connection(ip, portToTest, username, password);
 			if (connected == true){
 				myLogger.fine("Target "+ip+":"+portToTest+" : T3 connection establish :)");

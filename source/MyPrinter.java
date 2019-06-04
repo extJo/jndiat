@@ -36,23 +36,27 @@ public class MyPrinter {
 	public void printTitle (String message){
 		this.titlePos += 1;
 		this.subtitlePos = 1;
-		if (this.enableColor==true){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.titlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
+		boolean isEnableColor = this.enableColor==true;
+		if (isEnableColor){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.titlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
 		else {System.out.println("\n["+this.titlePos+"] "+ message);}
 	}
 	
 	public void printSubtitle (String message){
 		this.subtitlePos += 1;
-		if (this.enableColor==true){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.subtitlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
+		boolean isEnableColor = this.enableColor==true;
+		if (isEnableColor){System.out.println("\n" + ANSI_WHITE + ANSI_BOLD_ON + "["+this.subtitlePos+"] " + message + ANSI_BOLD_OFF + ANSI_RESET);}
 		else {System.out.println("\n["+this.titlePos+"] "+ message);}
 	}
 	
 	public void printBadNews (String message){
-		if (this.enableColor==true){System.out.println(ANSI_RED + message + ANSI_RESET);}
+		boolean isEnableColor = this.enableColor==true;
+		if (isEnableColor){System.out.println(ANSI_RED + message + ANSI_RESET);}
 		else {System.out.println(message);}
 	}
 	
 	public void printGoodNews (String message){
-		if (this.enableColor==true){System.out.println(ANSI_GREEN + message + ANSI_RESET);}
+		boolean isEnableColor = this.enableColor==true;
+		if (isEnableColor){System.out.println(ANSI_GREEN + message + ANSI_RESET);}
 		else {System.out.println(message);}
 	}
 	

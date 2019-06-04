@@ -300,49 +300,49 @@ public class DBTablePrinter {
     /**
      * Overloaded method that prints rows from table <code>tableName</code>
      * to standard out using the given database connection
-     * <code>conn</code>. Total number of rows will be limited to
+     * <code>connection</code>. Total number of rows will be limited to
      * {@link #DEFAULT_MAX_ROWS} and
      * {@link #DEFAULT_MAX_TEXT_COL_WIDTH} will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
+     * @param connection Database connection object (java.sql.Connection)
      * @param tableName Name of the database table
      */
-    public static void printTable(Connection conn, String tableName){
-        printTable(conn, tableName, DEFAULT_MAX_ROWS, DEFAULT_MAX_TEXT_COL_WIDTH);
+    public static void printTable(Connection connection, String tableName){
+        printTable(connection, tableName, DEFAULT_MAX_ROWS, DEFAULT_MAX_TEXT_COL_WIDTH);
     }
 
     /**
      * Overloaded method that prints rows from table <code>tableName</code>
      * to standard out using the given database connection
-     * <code>conn</code>. Total number of rows will be limited to
+     * <code>connection</code>. Total number of rows will be limited to
      * <code>maxRows</code> and
      * {@link #DEFAULT_MAX_TEXT_COL_WIDTH} will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
+     * @param connection Database connection object (java.sql.Connection)
      * @param tableName Name of the database table
      * @param maxRows Number of max. rows to query and print
      */
-    public static void printTable(Connection conn, String tableName, int maxRows) {
-        printTable(conn, tableName, maxRows, DEFAULT_MAX_TEXT_COL_WIDTH);
+    public static void printTable(Connection connection, String tableName, int maxRows) {
+        printTable(connection, tableName, maxRows, DEFAULT_MAX_TEXT_COL_WIDTH);
     }
 
     /**
      * Overloaded method that prints rows from table <code>tableName</code>
      * to standard out using the given database connection
-     * <code>conn</code>. Total number of rows will be limited to
+     * <code>connection</code>. Total number of rows will be limited to
      * <code>maxRows</code> and
      * <code>maxStringColWidth</code> will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
+     * @param connection Database connection object (java.sql.Connection)
      * @param tableName Name of the database table
      * @param maxRows Number of max. rows to query and print
      * @param maxStringColWidth Max. width of text columns
      */
-    public static void printTable(Connection conn, String tableName, int maxRows, int maxStringColWidth) {
-        if (conn == null) {
+    public static void printTable(Connection connection, String tableName, int maxRows, int maxStringColWidth) {
+        if (connection == null) {
             System.err.println("DBTablePrinter Error: No connection to database (Connection is null)!");
             return;
         }
@@ -359,30 +359,30 @@ public class DBTablePrinter {
             maxRows = DEFAULT_MAX_ROWS;
         }
 
-        Statement stmt = null;
-        ResultSet rs = null;
+        Statement statement = null;
+        ResultSet resultset = null;
         try {
-            if (conn.isClosed()) {
+            if (connection.isClosed()) {
                 System.err.println("DBTablePrinter Error: Connection is closed!");
                 return;
             }
 
             String sqlSelectAll = "SELECT * FROM " + tableName + " LIMIT " + maxRows;
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery(sqlSelectAll);
+            statement = connection.createStatement();
+            resultset = statement.executeQuery(sqlSelectAll);
 
-            printResultSet(rs, maxStringColWidth);
+            printResultSet(resultset, maxStringColWidth);
 
         } catch (SQLException e) {
             System.err.println("SQL exception in DBTablePrinter. Message:");
             System.err.println(e.getMessage());
         } finally {
             try {
-                if (stmt != null) {
-                    stmt.close();
+                if (statement != null) {
+                    statement.close();
                 }
-                if (rs != null) {
-                    rs.close();
+                if (resultset != null) {
+                    resultset.close();
                 }
             } catch (SQLException ignore) {
                 // ignore
@@ -396,10 +396,10 @@ public class DBTablePrinter {
      * ResultSet</a> to standard out using {@link #DEFAULT_MAX_TEXT_COL_WIDTH}
      * to limit the width of text columns.
      *
-     * @param rs The <code>ResultSet</code> to print
+     * @param resultset The <code>ResultSet</code> to print
      */
-    public static void printResultSet(ResultSet rs) {
-        printResultSet(rs, DEFAULT_MAX_TEXT_COL_WIDTH);
+    public static void printResultSet(ResultSet resultset) {
+        printResultSet(resultset, DEFAULT_MAX_TEXT_COL_WIDTH);
     }
 
     /**
@@ -408,30 +408,32 @@ public class DBTablePrinter {
      * ResultSet</a> to standard out using <code>maxStringColWidth</code>
      * to limit the width of text columns.
      *
-     * @param rs The <code>ResultSet</code> to print
+     * @param resultset The <code>ResultSet</code> to print
      * @param maxStringColWidth Max. width of text columns
      */
-    public static void printResultSet(ResultSet rs, int maxStringColWidth) {
+    public static void printResultSet(ResultSet resultset, int maxStringColWidth) {
         try {
-            if (rs == null) {
+            boolean resultsetisNull = resultset == null;
+			if (resultsetisNull) {
                 System.err.println("DBTablePrinter Error: Result set is null!");
                 return;
             }
-            if (rs.isClosed()) {
+            if (resultset.isClosed()) {
                 System.err.println("DBTablePrinter Error: Result Set is closed!");
                 return;
             }
-            if (maxStringColWidth < 1) {
+            boolean maxstringcolwidthisUnderOne = maxStringColWidth < 1;
+			if (maxstringcolwidthisUnderOne) {
                 System.err.println("DBTablePrinter Info: Invalid max. varchar column width. Using default!");
                 maxStringColWidth = DEFAULT_MAX_TEXT_COL_WIDTH;
             }
 
             // Get the meta data object of this ResultSet.
-            ResultSetMetaData rsmd;
-            rsmd = rs.getMetaData();
+            ResultSetMetaData resultsetmetadata;
+            resultsetmetadata = resultset.getMetaData();
 
             // Total number of columns in this ResultSet
-            int columnCount = rsmd.getColumnCount();
+            int columnCount = resultsetmetadata.getColumnCount();
 
             // List of Column objects to store each columns of the ResultSet
             // and the String representation of their values.
@@ -442,38 +444,40 @@ public class DBTablePrinter {
             List<String> tableNames = new ArrayList<>(columnCount);
 
             // Get the columns and their meta data.
-            // NOTE: columnIndex for rsmd.getXXX methods STARTS AT 1 NOT 0
+            // NOTE: columnIndex for resultsetmetadata.getXXX methods STARTS AT 1 NOT 0
             for (int i = 1; i <= columnCount; i++) {
-                Column c = new Column(rsmd.getColumnLabel(i),
-                        rsmd.getColumnType(i), rsmd.getColumnTypeName(i));
+                Column c = new Column(resultsetmetadata.getColumnLabel(i),
+                        resultsetmetadata.getColumnType(i), resultsetmetadata.getColumnTypeName(i));
                 c.setWidth(c.getLabel().length());
                 c.setTypeCategory(whichCategory(c.getType()));
                 columns.add(c);
 
-                if (!tableNames.contains(rsmd.getTableName(i))) {
-                    tableNames.add(rsmd.getTableName(i));
+                boolean tablenameIsNotExist = !tableNames.contains(resultsetmetadata.getTableName(i));
+				if (tablenameIsNotExist) {
+                    tableNames.add(resultsetmetadata.getTableName(i));
                 }
             }
 
             // Go through each row, get values of each column and adjust
             // column widths.
             int rowCount = 0;
-            while (rs.next()) {
+            while (resultset.next()) {
 
-                // NOTE: columnIndex for rs.getXXX methods STARTS AT 1 NOT 0
+                // NOTE: columnIndex for resultset.getXXX methods STARTS AT 1 NOT 0
                 for (int i = 0; i < columnCount; i++) {
                     Column c = columns.get(i);
                     String value;
                     int category = c.getTypeCategory();
 
-                    if (category == CATEGORY_OTHER) {
+                    boolean categoryIsOtherType = category == CATEGORY_OTHER;
+					if (categoryIsOtherType) {
 
                         // Use generic SQL type name instead of the actual value
                         // for column types BLOB, BINARY etc.
                         value = "(" + c.getTypeName() + ")";
 
                     } else {
-                        value = rs.getString(i+1) == null ? "NULL" : rs.getString(i+1);
+                        value = resultset.getString(i+1) == null ? "NULL" : resultset.getString(i+1);
                     }
                     switch (category) {
                         case CATEGORY_DOUBLE:
@@ -481,8 +485,9 @@ public class DBTablePrinter {
                             // For real numbers, format the string value to have 3 digits
                             // after the point. THIS IS TOTALLY ARBITRARY and can be
                             // improved to be CONFIGURABLE.
-                            if (!value.equals("NULL")) {
-                                Double dValue = rs.getDouble(i+1);
+						boolean valueIsNull = !value.equals("NULL");
+						if (valueIsNull) {
+                                Double dValue = resultset.getDouble(i+1);
                                 value = String.format("%.3f", dValue);
                             }
                             break;
@@ -493,7 +498,8 @@ public class DBTablePrinter {
                             c.justifyLeft();
 
                             // and apply the width limit
-                            if (value.length() > maxStringColWidth) {
+						boolean valuelengthIsOverMaxStingColWidth = value.length() > maxStringColWidth;
+						if (valuelengthIsOverMaxStingColWidth) {
                                 value = value.substring(0, maxStringColWidth - 3) + "...";
                             }
                             break;
@@ -505,7 +511,7 @@ public class DBTablePrinter {
                 } // END of for loop columnCount
                 rowCount++;
 
-            } // END of while (rs.next)
+            } // END of while (resultset.next)
 
             /*
             At this point we have gone through meta data, get the
@@ -536,18 +542,19 @@ public class DBTablePrinter {
               // Center the column label
                 String toPrint;
                 String name = c.getLabel();
-                int diff = width - name.length();
+                int diffrence = width - name.length();
 
-                if ((diff%2) == 1) {
-                    // diff is not divisible by 2, add 1 to width (and diff)
+                boolean diffrenceIsOddNumber = (diffrence%2) == 1;
+				if (diffrenceIsOddNumber) {
+                    // diffrence is not divisible by 2, add 1 to width (and diffrence)
                     // so that we can have equal padding to the left and right
                     // of the column label.
                     width++;
-                    diff++;
+                    diffrence++;
                     c.setWidth(width);
                 }
 
-                int paddingSize = diff/2; // InteliJ says casting to int is redundant.
+                int paddingSize = diffrence/2; // InteliJ says casting to int is redundant.
 
                 // Cool String repeater code thanks to user102008 at stackoverflow.com
                 // (http://tinyurl.com/7x9qtyg) "Simple way to repeat a string in java"
@@ -640,39 +647,42 @@ public class DBTablePrinter {
      * @param type Generic SQL type
      * @return The category this type belongs to
      */
+
     private static int whichCategory(int type) {
-        switch (type) {
-            case Types.BIGINT:
-            case Types.TINYINT:
-            case Types.SMALLINT:
-            case Types.INTEGER:
-                return CATEGORY_INTEGER;
+    	
+    	switch (type) {
+        case Types.BIGINT:
+        case Types.TINYINT:
+        case Types.SMALLINT:
+        case Types.INTEGER:
+            return CATEGORY_INTEGER;
 
-            case Types.REAL:
-            case Types.DOUBLE:
-            case Types.DECIMAL:
-                return CATEGORY_DOUBLE;
+        case Types.REAL:
+        case Types.DOUBLE:
+        case Types.DECIMAL:
+            return CATEGORY_DOUBLE;
 
-            case Types.DATE:
-            case Types.TIME:
-            //case Types.TIME_WITH_TIMEZONE:
-            case Types.TIMESTAMP:
-            //case Types.TIMESTAMP_WITH_TIMEZONE:
-            //    return CATEGORY_DATETIME;
+        case Types.DATE:
+        case Types.TIME:
+        //case Types.TIME_WITH_TIMEZONE:
+        case Types.TIMESTAMP:
+        //case Types.TIMESTAMP_WITH_TIMEZONE:
+        //    return CATEGORY_DATETIME;
 
-            case Types.BOOLEAN:
-                return CATEGORY_BOOLEAN;
+        case Types.BOOLEAN:
+            return CATEGORY_BOOLEAN;
 
-            case Types.VARCHAR:
-            case Types.NVARCHAR:
-            case Types.LONGVARCHAR:
-            case Types.LONGNVARCHAR:
-            case Types.CHAR:
-            case Types.NCHAR:
-                return CATEGORY_STRING;
+        case Types.VARCHAR:
+        case Types.NVARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.LONGNVARCHAR:
+        case Types.CHAR:
+        case Types.NCHAR:
+            return CATEGORY_STRING;
 
-            default:
-                return CATEGORY_OTHER;
-        }
+        default:
+            return CATEGORY_OTHER;
+    	}
     }
 }
+
