@@ -343,8 +343,8 @@ public class Jndiat extends MyPrinter {
 		}
 	}
 
-	private void colorEnable(Namespace namespace) {
-		if (namespace.getBoolean("no-color") == false) {
+	private void colorEnable(Namespace ns) {
+		if (ns.getBoolean("no-color") == false) {
 			this.outputColored = false;
 			this.disableColor();
 		}
