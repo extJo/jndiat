@@ -4,7 +4,9 @@ import java.util.List;
 
 public class ScannerData implements DataScanStretegy {
 	public List<Integer> openedPorts;
-
+	private PortFactory portFactory;
+	private PortProduct portProduct;
+	
 	public ScannerData() {
 	}
 
@@ -18,22 +20,12 @@ public class ScannerData implements DataScanStretegy {
 		boolean connected = false;
 		String[] portsList = new String[] {};
 		List<String> tempPorts = new ArrayList<String>();
-		PortFactory portFactory = null;
+		portFactory = new PortFactory();
+
+		portProduct = portFactory.create(portsList, tempPorts, ports);
+		portsList = portProduct.makePortList();
+		portProduct.makeLog();
 		
-		if (ports.contains(",")==true){
-			portFactory = new SplitPort(portsList, ports);
-			portsList = portFactory.makePortList();
-			portFactory.makeLog();
-		}
-		else if (ports.contains("-")==true){
-			portFactory = new HyphenPort(portsList, tempPorts, ports);
-			portsList = portFactory.makePortList();
-			portFactory.makeLog();			
-		}
-		else {
-			//ports contains a port only
-			portsList = new String[] {ports};
-		}
 		for (numberOfPorts=0; numberOfPorts<portsList.length; numberOfPorts++) {
 			Scanner.myLogger.fine("Scanning the port "+portsList[numberOfPorts]);
 			int portToTest = Integer.valueOf(portsList[numberOfPorts]);

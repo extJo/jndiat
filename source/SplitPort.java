@@ -1,6 +1,6 @@
 import java.util.Arrays;
 
-public class SplitPort extends PortFactory {
+public class SplitPort extends PortProduct {
 	
 	String[] portsList = new String[] {};
 	String ports;

@@ -1,6 +1,6 @@
 import java.util.List;
 
-public class HyphenPort extends PortFactory {
+public class HyphenPort extends PortProduct {
 
 	String[] limits;
 	String[] portsList;
