@@ -1,4 +1,3 @@
-
 //JNDIAT by Quentin HARDY
 //quentin.hardy@protonmail.com
 import java.lang.Integer;
@@ -288,8 +287,8 @@ public class Jndiat extends MyPrinter {
 					"weblogic.jndi.WLInitialContextFactory", false, namespace.getString("cred-file"),
 					namespace.getString("separator"));
 			this.disableColorInObjectIfNeeded(bruteForce);
-			bruteForce.searchValidCreds();
-			bruteForce.printValidCreds();
+			bruteForce.searchValidCredentials();
+			bruteForce.printValidCredentials();
 		}
 	}
 
